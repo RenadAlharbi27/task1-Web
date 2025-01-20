@@ -1,0 +1,187 @@
+<!-- الصفحة الأولى -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Classifier</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom right, #eceff1, #cfd8dc);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #00796b;
+            color: white;
+            padding: 2rem;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .content {
+            margin: 50px auto;
+            max-width: 800px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        p {
+            font-size: 1.3rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>Device Classifier</header>
+    <div class="content">
+        <h1>Which Device Do You Have?</h1>
+        <p>Our AI model will help you identify whether you are using an iPhone or Galaxy device.</p>
+        <img src="IMG/WEB.jpg" alt="Device Image">
+    </div>
+</body>
+</html>
+
+<!-- الصفحة الثانية -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Classifier</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.3/dist/teachablemachine-image.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom right, #eceff1, #cfd8dc);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #00796b;
+            color: white;
+            padding: 2rem;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        video {
+            margin-top: 30px;
+            border: 4px solid #004d40;
+            border-radius: 15px;
+            width: 450px;
+            height: 300px;
+        }
+        .result, .timer {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .loading {
+            color: #00796b;
+            margin-top: 10px;
+            font-size: 1.2rem;
+        }
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background-color: #004d40;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>Device Classifier</header>
+    <video id="camera" autoplay></video>
+    <div class="loading" id="loading">Loading model, please wait...</div>
+    <div class="result" id="result">Result will appear here.</div>
+    <div class="timer" id="timer">Time taken: 0 seconds</div>
+
+    <div class="button-container">
+        <button id="captureButton">📱 Detect Device</button>
+        <button id="resetButton">🔄 Reset Timer</button>
+    </div>
+
+    <script>
+        const URL = "https://teachablemachine.withgoogle.com/models/81-FyHfe1/";
+
+        const video = document.getElementById('camera');
+        const result = document.getElementById('result');
+        const timer = document.getElementById('timer');
+        const loading = document.getElementById('loading');
+        const captureButton = document.getElementById('captureButton');
+        const resetButton = document.getElementById('resetButton');
+        let model;
+        let startTime;
+
+        // Load the model
+        async function loadModel() {
+            try {
+                const modelURL = `${URL}model.json`;
+                const metadataURL = `${URL}metadata.json`;
+                model = await tmImage.load(modelURL, metadataURL);
+                loading.innerText = "Model loaded successfully!";
+            } catch (error) {
+                console.error('Error loading model:', error);
+                loading.innerText = 'Error loading model. Check console for details.';
+            }
+        }
+
+        // Initialize the camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => {
+                console.error("Error accessing the camera:", err);
+                loading.innerText = 'Error accessing the camera. Check console for details.';
+            });
+
+        // Capture image and classify
+        captureButton.addEventListener('click', async () => {
+            if (!model) return;
+
+            startTime = performance.now();
+            const prediction = await model.predict(video);
+            const bestPrediction = prediction.reduce((best, p) => p.probability > best.probability ? p : best);
+            result.innerText = `Device: ${bestPrediction.className}`;
+            const endTime = performance.now();
+            timer.innerText = `Time taken: ${(endTime - startTime) / 1000} seconds`;
+        });
+
+        // Reset timer
+        resetButton.addEventListener('click', () => {
+            timer.innerText = "Time taken: 0 seconds";
+            result.innerText = "Result will appear here.";
+        });
+
+        // Load the model on page load
+        loadModel();
+    </script>
+</body>
+</html>
